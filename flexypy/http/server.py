@@ -31,27 +31,25 @@ class WsgiServer:
         self.routes: list[Type[UserRoute]] = []
         self.router = None
         self.request = Request
-        if self.root_url != 'favicon.ico':
-            self._get_fxp_apps()
-            self.router = Router(self.environ, self.routes, self.full_url)
+        self._get_fxp_apps()
+        self.router = Router(self.environ, self.routes, self.full_url)
 
     def _route(self) -> HtmlResponse:
         path_found = False
         match self.environ['REQUEST_METHOD']:
             case 'GET':
-                if self.root_url != 'favicon.ico':
-                    if self.router.check_url():
-                        path_found = True
-                        app = self.router.check_url()()
-                        self.request.Get.params = self.router.query_kwargs
+                if self.router.check_url():
+                    path_found = True
+                    app = self.router.check_url()()
+                    self.request.Get.params = self.router.query_kwargs
 
-                        # SET APP REQUEST
-                        app.request = self.request
-                        return self._method_get(app)
+                    # SET APP REQUEST
+                    app.request = self.request
+                    return self._method_get(app)
 
-                    if self.router.check_static_file():
-                        path_found = True
-                        return self._method_get_static_files(self.router.check_static_file())
+                if self.router.check_static_file():
+                    path_found = True
+                    return self._method_get_static_files(self.router.check_static_file())
                 # IF PATH NOT FOUND
                 if not path_found:
                     t = PathNotFound(self.full_url, [self.server_address + i().get_path() for i in self.routes])
@@ -72,17 +70,15 @@ class WsgiServer:
         for i in STATIC_DIRS:
             if os.path.exists(os.path.join(i, p)):
                 cp = os.path.join(i, p)
-        if not cp:
-            raise 'STATIC ROUTE ERROR'
-
-        with open(cp, 'rb') as f:
-            mime_type = mimetypes.guess_type(cp)[0]
-            resp = self.render.render_html('200 OK', [('Content-type', mime_type)], f.read())
-            return resp
+        if cp:
+            with open(cp, 'rb') as f:
+                mime_type = mimetypes.guess_type(cp)[0]
+                resp = self.render.render_html('200 OK', [('Content-type', mime_type)], f.read())
+                return resp
 
     def start(self):
-        if self.root_url != 'favicon.ico':
-            resp = self._route()
+        resp = self._route()
+        if resp:
             self.start_response(resp.code, resp.header)
             return [resp.html]
         else:
@@ -140,12 +136,6 @@ class Router:
             if check_path == url:
                 self.query_kwargs.update(url_params)
                 return app
-
-        # if url in [app().path for app in self.apps]:
-        #     for app in self.apps:
-        #         a = app()
-        #         if a.path == url:
-        #             return app
         return None
 
     def _get_url_params(self, app) -> dict:
@@ -160,25 +150,11 @@ class Router:
                 par[sp.strip('[').strip(']')] = [p]
             else:
                 return par
-        # if app.slug_data.count > 0:
-        #     u = self.current_url
-        #     for sp in app.slug_data.params:
-        #         p = u[app.slug_data.params[sp][0]::]
-        #         if p.find('/') != -1:
-        #             u = app.path[:app.slug_data.params[sp][1]:] + p[p.find('/')::]
-        #             p = p[:p.find('/'):]
-        #         par.append(p)
-        # else:
-        #     u = self.current_url
-        #     for sp in app.slug_data.params:
-        #         p = u[app.slug_data.params[sp][0]::]
-        #         par.append(p)
         return par
 
     def _parse_qs(self, path: str) -> list[str, dict]:
         p = path.split('?')
         return [p[0], parse.parse_qs(self.environ['QUERY_STRING'])]
-
 
     def check_static_file(self):
         if self.current_url.rfind('.') != -1:

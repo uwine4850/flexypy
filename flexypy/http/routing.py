@@ -1,6 +1,7 @@
 from flexypy.http.request import Request
 from dataclasses import dataclass
 import re
+from flexypy.exceptions.routing import PathParameterAlreadyExists
 
 
 @dataclass
@@ -55,6 +56,8 @@ class Route:
             p = path[end::]
             if p.find('[') != -1:
                 for i in self._get_slug_names(p):
+                    if i in names:
+                        raise PathParameterAlreadyExists('_get_slug_names', i)
                     names.append(i)
         return names
 
