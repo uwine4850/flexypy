@@ -9,6 +9,7 @@ from typing import Type
 import os
 from flexypy.exceptions.web.server import PathNotFound
 from urllib import parse
+from cgi import FieldStorage
 
 
 @dataclass
@@ -41,27 +42,47 @@ class WsgiServer:
                 if self.router.check_url():
                     path_found = True
                     app = self.router.check_url()()
-                    self.request.Get.params = self.router.query_kwargs
 
-                    # SET APP REQUEST
+                    # Set request data
+                    self.request.GET.set_data(self.router.query_kwargs)
+                    self.request.path = self.full_url
+
+                    # Set app request
                     app.request = self.request
                     return self._method_get(app)
 
                 if self.router.check_static_file():
                     path_found = True
                     return self._method_get_static_files(self.router.check_static_file())
-                # IF PATH NOT FOUND
+
+                # If path not found
                 if not path_found:
                     t = PathNotFound(self.full_url, [self.server_address + i().get_path() for i in self.routes])
                     return self.render.render_traceback(t.code, t.html)
             case 'POST':
-                pass
+                if self.router.check_url():
+                    app = self.router.check_url()()
+
+                    # Set request data
+                    self.request.GET.params = self.router.query_kwargs
+                    form_data = FieldStorage(fp=self.environ['wsgi.input'], environ=self.environ,
+                                             keep_blank_values=True)
+                    self.request.POST.set_data(form_data)
+
+                    # Set app request
+                    app.request = self.request
+
+                    return self._method_post(app)
 
     def _method_get(self, app: UserRoute) -> HtmlResponse:
         with open(app.get(), 'rb') as f:
             mime_type = mimetypes.guess_type(app.template_path)[0]
             resp = self.render.render_html('200 OK', [('Content-type', mime_type)], f.read())
             return resp
+
+    def _method_post(self, app: UserRoute):
+        resp = self.render.render_html('303 See Other', [('Location', app.post())], '')
+        return resp
 
     def _method_get_static_files(self, filepath) -> HtmlResponse:
         # TODO: TEMP

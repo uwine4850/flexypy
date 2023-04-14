@@ -2,6 +2,7 @@ from flexypy.http.request import Request
 from dataclasses import dataclass
 import re
 from flexypy.exceptions.routing import PathParameterAlreadyExists
+from abc import abstractmethod
 
 
 @dataclass
@@ -27,10 +28,12 @@ class Route:
             self.get_func()
         return self.template_path
 
+    @abstractmethod
     def post(self):
-        if self.post_func:
-            self.post_func()
-        return self.template_path
+        pass
+        # if self.post_func:
+        #     self.post_func()
+        # return self.template_path
 
     def set_get(self, func):
         self.get_func = func
@@ -74,3 +77,7 @@ class UserRoute(Route):
             return self.parent_route().path.strip('/') + '/' + path.strip('/')
         else:
             return path
+
+
+def redirect(path):
+    return path
