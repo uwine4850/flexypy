@@ -1,7 +1,8 @@
 from flexypy.http.request import Request
 from dataclasses import dataclass
 import mimetypes
-from config.apps import PATH_TO_FXP_APPS, STATIC_DIR_NAME, STATIC_DIRS
+from config.apps import PATH_TO_FXP_APPS
+from config.dirs import STATIC_DIR_NAME
 import importlib
 from wsgiref import util
 from flexypy.http.routing import UserRoute
@@ -52,7 +53,6 @@ class WsgiServer:
                     return self._method_get(app)
 
                 if self.router.check_static_file():
-                    path_found = True
                     return self._method_get_static_files(self.router.check_static_file())
 
                 # If path not found
@@ -75,25 +75,29 @@ class WsgiServer:
                     return self._method_post(app)
 
     def _method_get(self, app: UserRoute) -> HtmlResponse:
-        with open(app.get(), 'rb') as f:
-            mime_type = mimetypes.guess_type(app.template_path)[0]
-            resp = self.render.render_html('200 OK', [('Content-type', mime_type)], f.read())
-            return resp
+        mime_type = mimetypes.guess_type(app.template_path)[0]
+        resp = self.render.render_html('200 OK', [('Content-type', mime_type)], app.get())
+        return resp
 
     def _method_post(self, app: UserRoute):
         resp = self.render.render_html('303 See Other', [('Location', app.post())], '')
         return resp
 
     def _method_get_static_files(self, filepath) -> HtmlResponse:
-        # TODO: TEMP
-        p = os.path.join(STATIC_DIR_NAME, filepath.split(STATIC_DIR_NAME)[-1].strip('/'))
-        cp = ''
-        for i in STATIC_DIRS:
-            if os.path.exists(os.path.join(i, p)):
-                cp = os.path.join(i, p)
-        if cp:
-            with open(cp, 'rb') as f:
-                mime_type = mimetypes.guess_type(cp)[0]
+        # get static filepath
+        current_url: str = self.environ['HTTP_REFERER'].replace(self.server_address, '')
+        if current_url.endswith('/'):
+            p = filepath.split(current_url)[-1].strip('/')
+        else:
+            if current_url.rfind('/') != -1:
+                converted_path = current_url[:current_url.rfind('/')+1:]
+            else:
+                converted_path = current_url
+            p = filepath.split(converted_path)[-1].strip('/')
+
+        if os.path.exists(p):
+            with open(p, 'rb') as f:
+                mime_type = mimetypes.guess_type(p)[0]
                 resp = self.render.render_html('200 OK', [('Content-type', mime_type)], f.read())
                 return resp
 

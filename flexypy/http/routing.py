@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import re
 from flexypy.exceptions.routing import PathParameterAlreadyExists
 from abc import abstractmethod
+from flexypy.http.template.render import RenderTemplate
+from typing import Callable
 
 
 @dataclass
@@ -19,6 +21,11 @@ class Route:
         self.get_func = None
         self.post_func = None
         self.request: Request = None
+        self.template_variables = {}
+        self.template_methods = []
+
+    def set_template_methods(self, functions: list[Callable]):
+        self.template_methods = functions
 
     def get_path(self):
         return self.path
@@ -26,14 +33,15 @@ class Route:
     def get(self):
         if self.get_func:
             self.get_func()
-        return self.template_path
+        return RenderTemplate(self.template_path).set_template_methods(self.template_methods)\
+            .render(**self.template_variables)
+
+    def set_template_variables(self, **kwargs):
+        self.template_variables = kwargs
 
     @abstractmethod
     def post(self):
         pass
-        # if self.post_func:
-        #     self.post_func()
-        # return self.template_path
 
     def set_get(self, func):
         self.get_func = func
@@ -78,6 +86,10 @@ class UserRoute(Route):
         else:
             return path
 
+    def post(self):
+        pass
+
 
 def redirect(path):
     return path
+
