@@ -60,7 +60,10 @@ class _JinjaInit:
         """
         Collects all template extensions (Classes) inherited from BaseExtension.
         """
-        import flexypy.http.template.extensions.extensions
+
+        # dafault extensions path
+        EXTENSIONS_PATH.append('flexypy/http/template/extensions/')
+
         for path in EXTENSIONS_PATH:
             p = path.replace('/', '.')
             importlib.import_module(f'{p}template_ext')

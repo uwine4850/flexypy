@@ -1,0 +1,15 @@
+TEMPLATES_PATH = [
+    'templates',
+]
+
+STATICFILES_PATH = [
+    'static',
+]
+
+EXTENSIONS_PATH = [
+
+]
+
+GLOBAL_TEMPLATE_OBJECTS_PATH = 'global'
+GLOBAL_TEMPLATE_FUNCTIONS_PATH = 'global'
+MDDL_LIST_PATH = 'global'
