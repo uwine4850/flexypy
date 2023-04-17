@@ -60,9 +60,10 @@ class WsgiServer:
                     app.request = self.request
 
                     mddl_app, mddl_redirect = self._run_middlewares(app)
-                    if mddl_redirect.from_path and mddl_redirect.to_path:
-                        if self.full_url == mddl_redirect.from_path:
-                            return self.render.render_redirect(mddl_redirect.to_path)
+                    if mddl_redirect:
+                        if mddl_redirect.from_path and mddl_redirect.to_path:
+                            if self.full_url == mddl_redirect.from_path:
+                                return self.render.render_redirect(mddl_redirect.to_path)
                     return self._method_get(mddl_app)
                 if self.router.check_static_file():
                     return self._method_get_static_files(self.router.check_static_file())
@@ -90,7 +91,7 @@ class WsgiServer:
                             if self.full_url == mddl_redirect.from_path:
                                 return self.render.render_redirect(mddl_redirect.to_path)
 
-                    return self._method_post(app)
+                    return self._method_post(mddl_app)
 
     def _method_get(self, app: UserRoute) -> HtmlResponse:
         mime_type = mimetypes.guess_type(app.template_path)[0]
