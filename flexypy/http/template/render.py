@@ -4,6 +4,7 @@ import os
 from typing import Callable, Type
 from flexypy.http.template.extensions.base_extension import BaseExtension
 import importlib
+from flexypy.exceptions.render import TemplateNotFound
 
 
 class RenderTemplate:
@@ -23,6 +24,7 @@ class RenderTemplate:
                 filepath = os.path.join(templ, self.template_path)
                 if os.path.exists(filepath):
                     return _JinjaInit(filepath).template_methods(self._methods).jinit(**kwargs)
+            raise TemplateNotFound('render', self.template_path)
         except Exception as e:
             raise e
 

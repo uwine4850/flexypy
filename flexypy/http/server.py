@@ -85,9 +85,10 @@ class WsgiServer:
                     app.request = self.request
 
                     mddl_app, mddl_redirect = self._run_middlewares(app)
-                    if mddl_redirect.from_path and mddl_redirect.to_path:
-                        if self.full_url == mddl_redirect.from_path:
-                            return self.render.render_redirect(mddl_redirect.to_path)
+                    if mddl_redirect:
+                        if mddl_redirect.from_path and mddl_redirect.to_path:
+                            if self.full_url == mddl_redirect.from_path:
+                                return self.render.render_redirect(mddl_redirect.to_path)
 
                     return self._method_post(app)
 
