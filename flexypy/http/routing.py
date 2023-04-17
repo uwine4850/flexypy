@@ -82,7 +82,7 @@ class UserRoute(Route):
 
     def _modify_path(self, path) -> str:
         if self.parent_route:
-            return self.parent_route().path.strip('/') + '/' + path.strip('/')
+            return self.parent_route().path.strip('/') + '/' + path.lstrip('/')
         else:
             return path
 

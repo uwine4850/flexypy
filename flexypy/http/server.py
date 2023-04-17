@@ -12,6 +12,7 @@ from flexypy.exceptions.web.server import PathNotFound
 from urllib import parse
 from cgi import FieldStorage
 from flexypy.middlewares.mddl import Middleware
+import re
 
 
 @dataclass
@@ -63,7 +64,6 @@ class WsgiServer:
                         if self.full_url == mddl_redirect.from_path:
                             return self.render.render_redirect(mddl_redirect.to_path)
                     return self._method_get(mddl_app)
-
                 if self.router.check_static_file():
                     return self._method_get_static_files(self.router.check_static_file())
 
@@ -113,7 +113,17 @@ class WsgiServer:
                     converted_path = current_url[:current_url.rfind('/')+1:]
                 else:
                     converted_path = current_url
-                p = filepath.split(converted_path)[-1].strip('/')
+
+                p = filepath
+
+                if filepath.startswith(converted_path):
+                    p = filepath.split(converted_path)[-1].strip('/')
+
+                    # If names are duplicated in the path. For example test/test/path/to/file
+                    for i in re.finditer(converted_path, filepath):
+                        if os.path.exists(filepath[i.end()::]):
+                            p = filepath[i.end()::]
+                            break
 
             if os.path.exists(p):
                 with open(p, 'rb') as f:
