@@ -13,6 +13,7 @@ from urllib import parse
 from cgi import FieldStorage
 from flexypy.middlewares.mddl import Middleware
 import re
+from flexypy.http.cookie import Cookie
 
 
 @dataclass
@@ -157,17 +158,6 @@ class WsgiServer:
                 redirect = MddlRedirect(m.redirect_from, m.redirect_to)
         return [mddl_app, redirect]
 
-    def _set_cookie(self, header):
-        """
-        Set the cookies that the user writes to the request.
-        After the data is written to the header the field in the request is cleared.
-        """
-        if self.request.get_user_set_cookie():
-            header.extend(("set-cookie", morsel.OutputString())
-                          for morsel in self.request.get_user_set_cookie().values())
-            # clear request cookies
-            self.request.clear_request_cookie()
-
     def start(self):
         resp = self._route()
 
@@ -175,7 +165,9 @@ class WsgiServer:
             self.request.set_server_cookie(self.environ['HTTP_COOKIE'])
         if resp:
             # set header cookies
-            self._set_cookie(resp.header)
+            header = Cookie(self.request).set_server_cookie(resp.header)
+            if header:
+                resp.header = header
 
             self.start_response(resp.code, resp.header)
             return [resp.html]

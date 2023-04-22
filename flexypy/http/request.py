@@ -1,6 +1,8 @@
 from cgi import FieldStorage
 from abc import abstractmethod
 from http import cookies
+from flexypy.http.cookie import Cookie
+import datetime
 
 
 class FormData:
@@ -75,7 +77,10 @@ class Request:
     @classmethod
     def set_cookie(cls, name, value, expires=None):
         c = cookies.SimpleCookie()
-        c[name] = value
+        c[name] = Cookie.encrypt_cookie(value).decode()
+        c[name]['expires'] = (datetime.datetime.now() + datetime.timedelta(days=365)). \
+            strftime('%a, %d-%b-%Y %H:%M:%S GMT')
+        c[name]['secure'] = True
         if expires:
             c[name]['expires'] = expires
         cls._set_cookie.update(c)
@@ -87,8 +92,11 @@ class Request:
         cls._server_cookie = c
 
     @classmethod
-    def get_server_cookie(cls):
-        return cls._server_cookie
+    def get_server_cookie(cls, name):
+        try:
+            return Cookie.decrypt_cookie(cls._server_cookie.get(name).value.encode())
+        except:
+            return None
 
     @classmethod
     def delete_cookie(cls, name):
