@@ -5,8 +5,5 @@ except Exception as e:
 
 
 def application(environ, start_response):
-    try:
-        ret = WsgiServer(environ, start_response).start()
-        return ret
-    except Exception as e:
-        pass
+    ret = WsgiServer(environ, start_response).start()
+    return ret

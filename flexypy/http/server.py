@@ -43,6 +43,14 @@ class WsgiServer:
         self.request = Request
         self._get_fxp_apps()
         self.router = Router(self.environ, self.routes, self.full_url)
+        self._set_server_cookie()
+
+    def _set_server_cookie(self):
+        try:
+            if 'HTTP_COOKIE' in self.environ:
+                self.request.set_server_cookie(self.environ['HTTP_COOKIE'])
+        except Exception as e:
+            pass
 
     def _route(self) -> HtmlResponse:
         path_found = False
@@ -65,6 +73,7 @@ class WsgiServer:
                             if self.full_url == mddl_redirect.from_path:
                                 return self.render.render_redirect(mddl_redirect.to_path)
                     return self._method_get(mddl_app)
+
                 if self.router.check_static_file():
                     return self._method_get_static_files(self.router.check_static_file())
 
@@ -148,12 +157,32 @@ class WsgiServer:
                 redirect = MddlRedirect(m.redirect_from, m.redirect_to)
         return [mddl_app, redirect]
 
+    def _set_cookie(self, header):
+        """
+        Set the cookies that the user writes to the request.
+        After the data is written to the header the field in the request is cleared.
+        """
+        if self.request.get_user_set_cookie():
+            header.extend(("set-cookie", morsel.OutputString())
+                          for morsel in self.request.get_user_set_cookie().values())
+            # clear request cookies
+            self.request.clear_request_cookie()
+
     def start(self):
         resp = self._route()
+
+        if 'HTTP_COOKIE' in self.environ:
+            self.request.set_server_cookie(self.environ['HTTP_COOKIE'])
         if resp:
+            # set header cookies
+            self._set_cookie(resp.header)
+
             self.start_response(resp.code, resp.header)
             return [resp.html]
         else:
+            mime_type = self.environ['SCRIPT_NAME']
+            header = [('Content-type', mime_type)]
+            self.start_response('404 Not found', header)
             return [b'']
 
     def _get_fxp_apps(self):
