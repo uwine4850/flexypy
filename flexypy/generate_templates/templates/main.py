@@ -1,7 +1,7 @@
 try:
     from flexypy.http.server import WsgiServer
 except Exception as e:
-    pass
+    print(e)
 
 
 def application(environ, start_response):

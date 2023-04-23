@@ -81,6 +81,7 @@ class Request:
         c[name]['expires'] = (datetime.datetime.now() + datetime.timedelta(days=365)). \
             strftime('%a, %d-%b-%Y %H:%M:%S GMT')
         c[name]['secure'] = True
+        c[name]['path'] = '/'
         if expires:
             c[name]['expires'] = expires
         cls._set_cookie.update(c)

@@ -1,3 +1,5 @@
 PATH_TO_FXP_APPS = [
 
 ]
+
+FERNET_KEY = b'RsQ85PTLXM5UQUnJ0_o3nv31XiJnDhq3uGrVefLgXBo='
