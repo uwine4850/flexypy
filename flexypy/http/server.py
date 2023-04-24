@@ -5,7 +5,7 @@ from config.apps import PATH_TO_FXP_APPS
 from config.dirs import MDDL_LIST_PATH
 import importlib
 from wsgiref import util
-from flexypy.http.routing import UserRoute
+from flexypy.http.routing import UserRoute, Redirect
 from typing import Type
 import os
 from flexypy.exceptions.web.server import PathNotFound
@@ -37,7 +37,7 @@ class WsgiServer:
         self.start_response = start_response
         self.root_url = util.shift_path_info(self.environ)
         self.full_url = self.root_url + util.request_uri(self.environ).replace(util.application_uri(self.environ), '')
-        self.server_address = util.application_uri(self.environ).replace(self.root_url, '')
+        self.server_address = util.application_uri(self.environ).replace('/' + self.root_url, '') + '/'
         self.render: RenderTemplate = RenderTemplate()
         self.routes: list[Type[UserRoute]] = []
         self.router = None
@@ -104,12 +104,16 @@ class WsgiServer:
                     return self._method_post(mddl_app)
 
     def _method_get(self, app: UserRoute) -> HtmlResponse:
-        mime_type = mimetypes.guess_type(app.template_path)[0]
-        resp = self.render.render_html('200 OK', [('Content-type', mime_type)], app.get())
-        return resp
+        get_data = app.get()
+        if isinstance(get_data, Redirect):
+            return self.render.render_redirect(get_data.path)
+        else:
+            mime_type = mimetypes.guess_type(app.template_path)[0]
+            resp = self.render.render_html('200 OK', [('Content-type', mime_type)], get_data)
+            return resp
 
     def _method_post(self, app: UserRoute):
-        resp = self.render.render_redirect(app.post())
+        resp = self.render.render_redirect(app.post().path)
         return resp
 
     def _method_get_static_files(self, filepath) -> HtmlResponse:

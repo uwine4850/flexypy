@@ -13,6 +13,11 @@ class SlugData:
     params: dict
 
 
+@dataclass
+class Redirect:
+    path: str
+
+
 class Route:
     def __init__(self, path, template_path):
         self.path = path
@@ -90,6 +95,6 @@ class UserRoute(Route):
         pass
 
 
-def redirect(path):
-    return path
+# def redirect(path):
+#     return path
 
