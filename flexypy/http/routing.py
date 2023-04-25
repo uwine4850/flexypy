@@ -42,7 +42,7 @@ class Route:
             .render(**self.template_variables)
 
     def set_template_variables(self, **kwargs):
-        self.template_variables = kwargs
+        self.template_variables.update(kwargs)
 
     @abstractmethod
     def post(self):
