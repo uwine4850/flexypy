@@ -29,7 +29,3 @@ def generate(generate_dir):
                 with open(os.path.join(dir_path, file['name']), 'w+') as wf:
                     with open(file['path'], 'r') as rf:
                         wf.write(rf.read())
-
-
-if __name__ == '__main__':
-    generate('/home/uwine/Documents/python/flexypy/')

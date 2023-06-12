@@ -93,8 +93,3 @@ class UserRoute(Route):
 
     def post(self):
         pass
-
-
-# def redirect(path):
-#     return path
-

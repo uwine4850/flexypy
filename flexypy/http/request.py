@@ -75,13 +75,15 @@ class Request:
         cls._set_cookie = {}
 
     @classmethod
-    def set_cookie(cls, name, value, expires=None):
+    def set_cookie(cls, name, value, expires=None, max_age=None):
         c = cookies.SimpleCookie()
         c[name] = Cookie.encrypt_cookie(value).decode()
         c[name]['expires'] = (datetime.datetime.now() + datetime.timedelta(days=365)). \
             strftime('%a, %d-%b-%Y %H:%M:%S GMT')
         c[name]['secure'] = True
         c[name]['path'] = '/'
+        if max_age is not None:
+            c[name]['max-age'] = max_age
         if expires:
             c[name]['expires'] = expires
         cls._set_cookie.update(c)
@@ -89,7 +91,8 @@ class Request:
     @classmethod
     def set_server_cookie(cls, cookie):
         c = cookies.SimpleCookie()
-        c.load(cookie)
+        if cookie:
+            c.load(cookie)
         cls._server_cookie = c
 
     @classmethod
@@ -101,4 +104,4 @@ class Request:
 
     @classmethod
     def delete_cookie(cls, name):
-        cls.set_cookie(name, '', expires='Thu, 01, Jan 1970 00:00:00 GMT')
+        cls.set_cookie(name, '', expires='Thu, 01, Jan 1970 00:00:00 GMT', max_age=0)

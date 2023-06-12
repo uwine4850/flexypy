@@ -14,6 +14,7 @@ from cgi import FieldStorage
 from flexypy.middlewares.mddl import Middleware
 import re
 from flexypy.http.cookie import Cookie
+from http import cookies
 
 
 @dataclass
@@ -49,7 +50,14 @@ class WsgiServer:
     def _set_server_cookie(self):
         try:
             if 'HTTP_COOKIE' in self.environ:
+                c = cookies.SimpleCookie()
+                c.load(self.environ['HTTP_COOKIE'])
+                for i in list(c.keys()):
+                    if Cookie.decrypt_cookie(c.get(i).value.encode()) == '':
+                        c.pop(i)
                 self.request.set_server_cookie(self.environ['HTTP_COOKIE'])
+            else:
+                self.request.set_server_cookie(None)
         except Exception as e:
             pass
 
@@ -164,9 +172,8 @@ class WsgiServer:
 
     def start(self):
         resp = self._route()
+        self._set_server_cookie()
 
-        if 'HTTP_COOKIE' in self.environ:
-            self.request.set_server_cookie(self.environ['HTTP_COOKIE'])
         if resp:
             # set header cookies
             header = Cookie(self.request).set_server_cookie(resp.header)
