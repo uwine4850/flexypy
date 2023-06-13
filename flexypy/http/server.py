@@ -167,6 +167,11 @@ class WsgiServer:
                 m: Middleware = mddl(self.request, app)
                 m.start()
                 mddl_app = m.app
+                # set template variables
+                if m.template_kwargs:
+                    for name in m.template_kwargs:
+                        mddl_app.set_template_variables(**{name: m.template_kwargs[name]})
+
                 redirect = MddlRedirect(m.redirect_from, m.redirect_to)
         return [mddl_app, redirect]
 
